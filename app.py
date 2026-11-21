@@ -10,7 +10,11 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
 api_key = os.environ.get("GEMINI_API_KEY", "").strip().strip('"').strip("'")
-client = genai.Client(api_key=api_key)
+# Set a 10-second timeout so Render never kills the worker
+client = genai.Client(
+    api_key=api_key,
+    http_options=types.HttpOptions(timeout=10000)
+)
 
 GALI_WORDS = {
     "fuck", "fucking", "shit", "bitch", "asshole", "bastard", "dick",
@@ -69,15 +73,14 @@ def ask():
                 "clip": clip,
                 "answer": ai_data.get("answer", "I refuse to dignify that with a response.")
             })
-        except Exception:
+        except Exception as e:
+            print(f"Model {model_name} failed: {e}")
             continue
 
-    # Instant fallback if Google's servers are temporarily overloaded
     if has_gali:
-        return jsonify({"clip": "gali", "answer": "Watch your mouth. Even Google's servers took a break rather than deal with that."})
-    return jsonify({"clip": "stupid", "answer": "My brain is temporarily overloaded by that question. Ask again in 10 seconds."})
+        return jsonify({"clip": "gali", "answer": "Watch your mouth. Even the servers refused to process that."})
+    return jsonify({"clip": "stupid", "answer": "My brain just blue-screened trying to process that. Try asking again."})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
