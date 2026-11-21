@@ -49,7 +49,7 @@ def ask():
     Keep answers punchy (2-4 sentences max). Never mention the words "gali", "stupid", "normal", or "clip" in the answer.
     """
 
-    models_to_try = ["gemini-3.8-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+    models_to_try = ["gemini-3.8-flash"]
     last_error = None
 
     for model_name in models_to_try:
