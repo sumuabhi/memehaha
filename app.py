@@ -10,11 +10,7 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
 api_key = os.environ.get("GEMINI_API_KEY", "").strip().strip('"').strip("'")
-# Set a 10-second timeout so Render never kills the worker
-client = genai.Client(
-    api_key=api_key,
-    http_options=types.HttpOptions(timeout=10000)
-)
+client = genai.Client(api_key=api_key)
 
 GALI_WORDS = {
     "fuck", "fucking", "shit", "bitch", "asshole", "bastard", "dick",
@@ -53,33 +49,30 @@ def ask():
     Keep answers punchy (2-4 sentences max). Never mention the words "gali", "stupid", "normal", or "clip" in the answer.
     """
 
-    for model_name in ["gemini-3.8-flash-lite", "gemini-3.8-flash"]:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=f"{system_prompt}\n\nUser message: {question}",
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=f"{system_prompt}\n\nUser message: {question}",
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
             )
-            ai_data = json.loads(response.text)
-            clip = ai_data.get("clip", "normal")
-            if has_gali:
-                clip = "gali"
-            if clip not in ("gali", "stupid", "normal"):
-                clip = "normal"
+        )
+        ai_data = json.loads(response.text)
+        clip = ai_data.get("clip", "normal")
+        if has_gali:
+            clip = "gali"
+        if clip not in ("gali", "stupid", "normal"):
+            clip = "normal"
 
-            return jsonify({
-                "clip": clip,
-                "answer": ai_data.get("answer", "I refuse to dignify that with a response.")
-            })
-        except Exception as e:
-            print(f"Model {model_name} failed: {e}")
-            continue
-
-    if has_gali:
-        return jsonify({"clip": "gali", "answer": "Watch your mouth. Even the servers refused to process that."})
-    return jsonify({"clip": "stupid", "answer": "My brain just blue-screened trying to process that. Try asking again."})
+        return jsonify({
+            "clip": clip,
+            "answer": ai_data.get("answer", "I refuse to dignify that with a response.")
+        })
+    except Exception as e:
+        return jsonify({
+            "clip": "gali" if has_gali else "normal",
+            "answer": f"DEBUG ERROR: {e}"
+        })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
