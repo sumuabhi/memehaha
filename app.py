@@ -49,11 +49,7 @@ def ask():
     Keep answers punchy (2-4 sentences max). Never mention the words "gali", "stupid", "normal", or "clip" in the answer.
     """
 
-     models_to_try = ["gemini-3.8-flash", "gemini-3.8-flash-lite", "gemma-3-27b-it"]
-
-    last_error = None
-
-    for model_name in models_to_try:
+    for model_name in ["gemini-3.8-flash-lite", "gemini-3.8-flash"]:
         try:
             response = client.models.generate_content(
                 model=model_name,
@@ -73,15 +69,15 @@ def ask():
                 "clip": clip,
                 "answer": ai_data.get("answer", "I refuse to dignify that with a response.")
             })
-        except Exception as e:
-            last_error = e
+        except Exception:
             continue
 
-    return jsonify({
-        "clip": "gali" if has_gali else "stupid",
-        "answer": f"Something broke on my end ({last_error})."
-    })
+    # Instant fallback if Google's servers are temporarily overloaded
+    if has_gali:
+        return jsonify({"clip": "gali", "answer": "Watch your mouth. Even Google's servers took a break rather than deal with that."})
+    return jsonify({"clip": "stupid", "answer": "My brain is temporarily overloaded by that question. Ask again in 10 seconds."})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
