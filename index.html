@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ask away or (spare me the horror and leave please-)</title>
+  <style>
+    :root {
+      --bg: #0b0b0e;
+      --surface: #141419;
+      --border: #24242e;
+      --text: #f2f2f5;
+      --muted: #8a8a98;
+      --accent: #e11d48;
+      --accent-hover: #be123c;
+      --user-bubble: #1f1f29;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px 16px;
+    }
+
+    header {
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-right: 4px;
+      padding-bottom: 12px;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      line-height: 1.55;
+      font-size: 0.96rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user-bubble);
+      border: 1px solid var(--border);
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: #e4e4eb;
+    }
+
+    .wave {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 18px;
+    }
+
+    .wave span {
+      display: block;
+      width: 3px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 2px;
+      animation: pulse 0.8s infinite ease-in-out;
+    }
+
+    .wave span:nth-child(2) { animation-delay: 0.15s; }
+    .wave span:nth-child(3) { animation-delay: 0.3s; }
+    .wave span:nth-child(4) { animation-delay: 0.45s; }
+
+    @keyframes pulse {
+      0%, 100% { height: 5px; opacity: 0.4; }
+      50% { height: 18px; opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-size: 0.96rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { border-color: var(--accent); }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:hover:not(:disabled) { background: var(--accent-hover); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ask away or (spare me the horror and leave please-)</h1>
+    </header>
+
+    <div id="chat" class="chat-box"></div>
+
+    <form id="ask-form">
+      <input id="question-input" type="text" placeholder="Type something..." autocomplete="off" required />
+      <button id="ask-btn" type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("ask-form");
+    const input = document.getElementById("question-input");
+    const btn = document.getElementById("ask-btn");
+    const chat = document.getElementById("chat");
+
+    const clips = {
+      normal: new Audio("cunk.mp3"),
+      stupid: new Audio("nalayak.mp3"),
+      gali: new Audio("bhosrike.mp3")
+    };
+
+    function playClip(audio, onFinish) {
+      audio.currentTime = 0;
+      audio.onended = onFinish;
+      audio.play().catch(() => setTimeout(onFinish, 1400));
+    }
+
+    function appendMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = `msg ${sender}`;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (!q) return;
+
+      btn.disabled = true;
+      input.value = "";
+
+      appendMessage(q, "user");
+
+      const botMsg = document.createElement("div");
+      botMsg.className = "msg bot";
+      botMsg.innerHTML = `<div class="wave"><span></span><span></span><span></span><span></span></div>`;
+      chat.appendChild(botMsg);
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: q })
+        });
+        const data = await res.json();
+        const selectedAudio = clips[data.clip] || clips.normal;
+
+        playClip(selectedAudio, () => {
+          botMsg.textContent = data.answer;
+          chat.scrollTop = chat.scrollHeight;
+          btn.disabled = false;
+          input.focus();
+        });
+      } catch (err) {
+        botMsg.textContent = "Server didn't respond. Try again in a moment.";
+        btn.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
